@@ -42,6 +42,14 @@ func (f *fakeOutbox) RelayPending(ctx context.Context, limit int, relay messagin
 	return relayed, nil
 }
 
+func (f *fakeOutbox) Enqueue(_ context.Context, outgoing ...messaging.OutgoingMessage) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	f.pending = append(f.pending, outgoing...)
+	return nil
+}
+
 func (f *fakeOutbox) calls() int {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
