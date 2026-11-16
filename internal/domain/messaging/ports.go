@@ -29,5 +29,6 @@ type ProcessedMessageRepository interface {
 type RelayFunc func(ctx context.Context, outgoing OutgoingMessage) error
 
 type OutboxRepository interface {
+	Enqueue(ctx context.Context, outgoing ...OutgoingMessage) error
 	RelayPending(ctx context.Context, limit int, relay RelayFunc) (int, error)
 }
