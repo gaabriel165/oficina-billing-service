@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oficina-billing-service-config
+data:
+  SERVER_PORT: "8080"
+  APP_ENV: "production"
+  AWS_REGION: "us-east-1"
+  BILLING_COMMANDS_QUEUE: "oficina-billing-commands"
+  SAGA_REPLIES_QUEUE: "oficina-saga-replies"
+  PAYMENT_GATEWAY: "mercadopago"
+  MERCADOPAGO_BASE_URL: "https://api.mercadopago.com"
+  EMAIL_FROM: "onboarding@resend.dev"
+  OTEL_SERVICE_NAME: "oficina-billing-service"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "https://otlp.nr-data.net:4318"
