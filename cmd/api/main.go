@@ -11,6 +11,7 @@ package main
 import (
 	"context"
 	"log/slog"
+	"net/http"
 	"os"
 	"os/signal"
 	"sync"
@@ -21,6 +22,7 @@ import (
 	"github.com/gabrielcamargo/oficina-billing-service/internal/api"
 	"github.com/gabrielcamargo/oficina-billing-service/internal/application/outbox"
 	domainmessaging "github.com/gabrielcamargo/oficina-billing-service/internal/domain/messaging"
+	"github.com/gabrielcamargo/oficina-billing-service/internal/domain/repository"
 	"github.com/gabrielcamargo/oficina-billing-service/internal/infrastructure/database"
 	"github.com/gabrielcamargo/oficina-billing-service/internal/infrastructure/messaging"
 	"github.com/gabrielcamargo/oficina-billing-service/internal/infrastructure/notification"
@@ -28,6 +30,8 @@ import (
 	"github.com/gabrielcamargo/oficina-billing-service/internal/infrastructure/payment"
 	infrarepo "github.com/gabrielcamargo/oficina-billing-service/internal/infrastructure/repository"
 )
+
+const paymentGatewayTimeout = 10 * time.Second
 
 func main() {
 	cfg, err := configs.Load()
@@ -78,7 +82,7 @@ func main() {
 		BudgetRepo:    infrarepo.NewGormBudgetRepository(db),
 		PaymentRepo:   infrarepo.NewGormPaymentRepository(db),
 		Outbox:        outboxRepo,
-		Gateway:       payment.NewFakeGateway(cfg.PublicBaseURL),
+		Gateway:       newPaymentGateway(cfg),
 		Notifications: notification.NewResendNotifier(cfg.ResendAPIKey, cfg.EmailFrom),
 	})
 
@@ -123,4 +127,12 @@ func main() {
 		logger.Error("failed to flush traces", slog.String("error", err.Error()))
 	}
 	logger.Info("server.stopped", slog.String("event", "server.stopped"))
+}
+
+func newPaymentGateway(cfg *configs.Config) repository.PaymentGatewayService {
+	if cfg.MercadoPagoEnabled() {
+		client := &http.Client{Timeout: paymentGatewayTimeout}
+		return payment.NewMercadoPagoGateway(client, cfg.MercadoPagoBaseURL, cfg.MercadoPagoToken, cfg.PublicBaseURL)
+	}
+	return payment.NewFakeGateway(cfg.PublicBaseURL)
 }

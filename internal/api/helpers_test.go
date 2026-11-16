@@ -19,9 +19,10 @@ import (
 )
 
 const (
-	testJWTSecret = "test-secret"
-	roleOperator  = "operator"
-	roleCustomer  = "customer"
+	testJWTSecret     = "test-secret"
+	testWebhookSecret = "webhook-secret"
+	roleOperator      = "operator"
+	roleCustomer      = "customer"
 )
 
 type testEnvironment struct {
@@ -44,7 +45,7 @@ func newTestEnvironment(t *testing.T, paymentGateway string) *testEnvironment {
 		notifications: mocks.NewMockNotificationService(t),
 	}
 	environment.server = api.NewServer(
-		&configs.Config{ServerPort: "0", ServiceName: "oficina-billing-service", JWTSecret: testJWTSecret, PaymentGateway: paymentGateway},
+		&configs.Config{ServerPort: "0", ServiceName: "oficina-billing-service", JWTSecret: testJWTSecret, PaymentGateway: paymentGateway, MercadoPagoSecret: testWebhookSecret},
 		api.Dependencies{
 			BudgetRepo:    environment.budgetRepo,
 			PaymentRepo:   environment.paymentRepo,
