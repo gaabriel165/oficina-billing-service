@@ -1,0 +1,381 @@
+basePath: /api/v1
+definitions:
+  dto.BudgetItemResponse:
+    properties:
+      description:
+        type: string
+      id:
+        type: string
+      kind:
+        type: string
+      quantity:
+        type: integer
+      reference_id:
+        type: string
+      total_price:
+        type: number
+      unit_price:
+        type: number
+    type: object
+  dto.BudgetResponse:
+    properties:
+      created_at:
+        type: string
+      customer_id:
+        type: string
+      decided_at:
+        type: string
+      id:
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/dto.BudgetItemResponse'
+        type: array
+      order_id:
+        type: string
+      rejection_reason:
+        type: string
+      saga_id:
+        type: string
+      status:
+        type: string
+      total_amount:
+        type: number
+      updated_at:
+        type: string
+    type: object
+  dto.MercadoPagoNotification:
+    properties:
+      action:
+        type: string
+      data:
+        $ref: '#/definitions/dto.MercadoPagoNotificationData'
+      type:
+        type: string
+    type: object
+  dto.MercadoPagoNotificationData:
+    properties:
+      id:
+        type: string
+    type: object
+  dto.PaymentResponse:
+    properties:
+      amount:
+        type: number
+      budget_id:
+        type: string
+      checkout_url:
+        type: string
+      created_at:
+        type: string
+      failure_reason:
+        type: string
+      id:
+        type: string
+      order_id:
+        type: string
+      provider:
+        type: string
+      provider_payment_id:
+        type: string
+      status:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.RejectBudgetRequest:
+    properties:
+      reason:
+        type: string
+    required:
+    - reason
+    type: object
+  dto.SimulatePaymentRequest:
+    properties:
+      approved:
+        type: boolean
+      reason:
+        type: string
+    type: object
+  dto.WebhookResponse:
+    properties:
+      status:
+        type: string
+    type: object
+  response.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+host: localhost:8081
+info:
+  contact: {}
+  description: Budgets and payments of the mechanical workshop service orders.
+  title: Tech Challenge — Oficina Mecânica Billing Service
+  version: "1.0"
+paths:
+  /budgets:
+    get:
+      parameters:
+      - description: Service order ID
+        in: query
+        name: order_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.BudgetResponse'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List budgets; customers only see their own
+      tags:
+      - budgets
+  /budgets/{id}:
+    get:
+      parameters:
+      - description: Budget ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.BudgetResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get a budget by ID
+      tags:
+      - budgets
+  /budgets/{id}/approve:
+    patch:
+      parameters:
+      - description: Budget ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.BudgetResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Approve a budget; the payment is requested next
+      tags:
+      - budgets
+  /budgets/{id}/payment:
+    get:
+      parameters:
+      - description: Budget ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PaymentResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get the payment of a budget, with the checkout link
+      tags:
+      - budgets
+  /budgets/{id}/reject:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Budget ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Rejection reason
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RejectBudgetRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.BudgetResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Reject a budget, cancelling the service order
+      tags:
+      - budgets
+  /payments/{id}:
+    get:
+      parameters:
+      - description: Payment ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PaymentResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get a payment by ID
+      tags:
+      - payments
+  /payments/{id}/simulate:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Payment ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Outcome
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SimulatePaymentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PaymentResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Simulate the payment outcome; only available with the fake payment
+        gateway
+      tags:
+      - payments
+  /webhooks/mercadopago:
+    post:
+      consumes:
+      - application/json
+      description: Validates the x-signature header, reads the payment from Mercado
+        Pago and settles the local payment
+      parameters:
+      - description: Mercado Pago payment ID
+        in: query
+        name: data.id
+        required: true
+        type: string
+      - description: ts and v1 signature
+        in: header
+        name: x-signature
+        required: true
+        type: string
+      - description: Notification
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.MercadoPagoNotification'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.WebhookResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Receive a Mercado Pago payment notification
+      tags:
+      - webhooks
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

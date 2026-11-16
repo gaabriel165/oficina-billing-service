@@ -17,7 +17,7 @@ import (
 const (
 	ProviderMercadoPago = "mercadopago"
 
-	MercadoPagoWebhookPath = "/webhooks/mercadopago"
+	MercadoPagoWebhookPath = "/api/v1/webhooks/mercadopago"
 
 	currencyBRL             = "BRL"
 	statusApproved          = "approved"
