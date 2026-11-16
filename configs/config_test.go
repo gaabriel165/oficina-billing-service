@@ -35,3 +35,19 @@ func TestLoad_ShouldReadValuesFromEnvironment(t *testing.T) {
 	assert.Equal(t, "postgres://billing", cfg.DatabaseURL)
 	assert.Equal(t, "http://localhost:9324", cfg.SQSEndpoint)
 }
+
+func TestLoad_ShouldSelectMercadoPagoGateway(t *testing.T) {
+	t.Setenv("PAYMENT_GATEWAY", "mercadopago")
+	t.Setenv("MERCADOPAGO_ACCESS_TOKEN", "TEST-token")
+	t.Setenv("MERCADOPAGO_WEBHOOK_SECRET", "webhook-secret")
+	t.Setenv("MERCADOPAGO_BASE_URL", "")
+
+	cfg, err := configs.Load()
+
+	require.NoError(t, err)
+	assert.True(t, cfg.MercadoPagoEnabled())
+	assert.False(t, cfg.PaymentSimulationEnabled())
+	assert.Equal(t, "TEST-token", cfg.MercadoPagoToken)
+	assert.Equal(t, "webhook-secret", cfg.MercadoPagoSecret)
+	assert.Equal(t, "https://api.mercadopago.com", cfg.MercadoPagoBaseURL)
+}
