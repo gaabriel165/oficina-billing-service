@@ -28,7 +28,7 @@ func signedWebhook(environment *testEnvironment, secret, body string) *httptest.
 	mac := hmac.New(sha256.New, []byte(secret))
 	mac.Write([]byte("id:" + providerPaymentID + ";request-id:" + webhookRequestID + ";ts:" + webhookTimestamp + ";"))
 
-	request := httptest.NewRequest(http.MethodPost, "/webhooks/mercadopago?data.id="+providerPaymentID+"&type=payment", strings.NewReader(body))
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/webhooks/mercadopago?data.id="+providerPaymentID+"&type=payment", strings.NewReader(body))
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("x-request-id", webhookRequestID)
 	request.Header.Set("x-signature", "ts="+webhookTimestamp+",v1="+hex.EncodeToString(mac.Sum(nil)))

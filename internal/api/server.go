@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gabrielcamargo/oficina-billing-service/configs"
+	_ "github.com/gabrielcamargo/oficina-billing-service/docs"
 	"github.com/gabrielcamargo/oficina-billing-service/internal/api/consumer"
 	"github.com/gabrielcamargo/oficina-billing-service/internal/api/handler"
 	"github.com/gabrielcamargo/oficina-billing-service/internal/api/middleware"
@@ -17,6 +18,8 @@ import (
 	"github.com/gabrielcamargo/oficina-billing-service/internal/domain/messaging"
 	"github.com/gabrielcamargo/oficina-billing-service/internal/domain/repository"
 	"github.com/gin-gonic/gin"
+	swaggerfiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"gorm.io/gorm"
 )
@@ -121,6 +124,7 @@ func (s *Server) registerRoutes() {
 
 	s.router.GET("/health", s.health)
 	s.router.GET("/ready", s.ready)
+	s.router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
 	v1 := s.router.Group("/api/v1")
 	authenticated := v1.Group("", middleware.Auth(s.config.JWTSecret))
@@ -132,7 +136,7 @@ func (s *Server) registerRoutes() {
 		paymentHandler.RegisterSimulationRoutes(authenticated)
 	}
 	if s.config.MercadoPagoEnabled() {
-		webhooks := s.router.Group("/webhooks", middleware.MercadoPagoSignature(s.config.MercadoPagoSecret))
+		webhooks := v1.Group("/webhooks", middleware.MercadoPagoSignature(s.config.MercadoPagoSecret))
 		webhookHandler.RegisterRoutes(webhooks)
 	}
 }
