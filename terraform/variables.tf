@@ -81,9 +81,3 @@ variable "db_backup_retention_days" {
   type        = number
   default     = 1
 }
-
-variable "alert_email" {
-  description = "E-mail subscribed to the alerts topic. Leave empty to create the topic without subscription"
-  type        = string
-  default     = ""
-}
