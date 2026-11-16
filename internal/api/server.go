@@ -108,6 +108,9 @@ func (s *Server) registerRoutes() {
 		getPaymentUC,
 	)
 	paymentHandler := handler.NewPaymentHandler(getPaymentUC, settlePaymentUC)
+	webhookHandler := handler.NewMercadoPagoWebhookHandler(
+		payment.NewHandleGatewayNotificationUseCase(gateway, settlePaymentUC),
+	)
 
 	s.billingConsumer = consumer.NewBillingConsumer(
 		budget.NewGenerateBudgetUseCase(budgetRepo, notifications),
@@ -127,6 +130,10 @@ func (s *Server) registerRoutes() {
 	paymentHandler.RegisterOperatorRoutes(operators)
 	if s.config.PaymentSimulationEnabled() {
 		paymentHandler.RegisterSimulationRoutes(authenticated)
+	}
+	if s.config.MercadoPagoEnabled() {
+		webhooks := s.router.Group("/webhooks", middleware.MercadoPagoSignature(s.config.MercadoPagoSecret))
+		webhookHandler.RegisterRoutes(webhooks)
 	}
 }
 
