@@ -109,4 +109,3 @@ func assertStatus(t *testing.T, expected int, recorder *httptest.ResponseRecorde
 	t.Helper()
 	require.Equal(t, expected, recorder.Code, recorder.Body.String())
 }
-
