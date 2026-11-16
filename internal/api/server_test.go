@@ -13,7 +13,7 @@ import (
 
 func newTestServer() *api.Server {
 	gin.SetMode(gin.TestMode)
-	return api.NewServer(&configs.Config{ServerPort: "0", ServiceName: "oficina-billing-service"}, nil)
+	return api.NewServer(&configs.Config{ServerPort: "0", ServiceName: "oficina-billing-service"}, api.Dependencies{})
 }
 
 func TestHealth_ShouldReturnOK(t *testing.T) {

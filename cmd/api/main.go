@@ -23,7 +23,9 @@ import (
 	domainmessaging "github.com/gabrielcamargo/oficina-billing-service/internal/domain/messaging"
 	"github.com/gabrielcamargo/oficina-billing-service/internal/infrastructure/database"
 	"github.com/gabrielcamargo/oficina-billing-service/internal/infrastructure/messaging"
+	"github.com/gabrielcamargo/oficina-billing-service/internal/infrastructure/notification"
 	"github.com/gabrielcamargo/oficina-billing-service/internal/infrastructure/observability"
+	"github.com/gabrielcamargo/oficina-billing-service/internal/infrastructure/payment"
 	infrarepo "github.com/gabrielcamargo/oficina-billing-service/internal/infrastructure/repository"
 )
 
@@ -70,11 +72,20 @@ func main() {
 	publisher := messaging.NewSQSPublisher(queueClient, map[domainmessaging.Destination]string{
 		domainmessaging.DestinationSagaReplies: cfg.SagaRepliesQueue,
 	})
-	router := messaging.NewRouter()
-	consumer := messaging.NewSQSConsumer(queueClient, cfg.BillingCommandsQueue, router.Handle, infrarepo.NewGormProcessedMessageRepository(db))
-	relay := outbox.NewRelay(infrarepo.NewGormOutboxRepository(db), publisher)
+	outboxRepo := infrarepo.NewGormOutboxRepository(db)
+	server := api.NewServer(cfg, api.Dependencies{
+		DB:            db,
+		BudgetRepo:    infrarepo.NewGormBudgetRepository(db),
+		PaymentRepo:   infrarepo.NewGormPaymentRepository(db),
+		Outbox:        outboxRepo,
+		Gateway:       payment.NewFakeGateway(cfg.PublicBaseURL),
+		Notifications: notification.NewResendNotifier(cfg.ResendAPIKey, cfg.EmailFrom),
+	})
 
-	server := api.NewServer(cfg, db)
+	router := messaging.NewRouter()
+	server.RegisterMessageHandlers(router)
+	consumer := messaging.NewSQSConsumer(queueClient, cfg.BillingCommandsQueue, router.Handle, infrarepo.NewGormProcessedMessageRepository(db))
+	relay := outbox.NewRelay(outboxRepo, publisher)
 
 	var workers sync.WaitGroup
 	workers.Add(2)

@@ -20,6 +20,10 @@ func NewGormOutboxRepository(db *gorm.DB) *GormOutboxRepository {
 	return &GormOutboxRepository{db: db}
 }
 
+func (r *GormOutboxRepository) Enqueue(ctx context.Context, outgoing ...domain.OutgoingMessage) error {
+	return appendToOutbox(ctx, r.db.WithContext(ctx), outgoing)
+}
+
 func (r *GormOutboxRepository) RelayPending(ctx context.Context, limit int, relay domain.RelayFunc) (int, error) {
 	relayed := 0
 
